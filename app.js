@@ -3,50 +3,61 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
-let mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 
 var app = express();
 
-// view engine setup
+// View engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
+// Middleware
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Routes
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-app.use('/api/v1/products', require('./routes/products'))
-app.use('/api/v1/categories', require('./routes/categories'))
+app.use('/api/v1/products', require('./routes/products'));
+app.use('/api/v1/categories', require('./routes/categories'));
 
-mongoose.connect('mongodb://localhost:27017/NNPTUD-C5');
-mongoose.connection.on('connected', function () {
-  console.log("connected");
+// MongoDB Atlas connection
+mongoose.connect(
+"mongodb+srv://hoangphi0908336492_db_user:abc12345678@cluster0.f75tjvt.mongodb.net/NNPTUD-C5?retryWrites=true&w=majority"
+)
+.then(() => {
+console.log("MongoDB Atlas connected");
 })
-mongoose.connection.on('disconnecting', function () {
-  console.log("disconnected");
-})
-
-// catch 404 and forward to error handler
-app.use(function (req, res, next) {
-  next(createError(404));
+.catch((err) => {
+console.log("MongoDB connection error:", err);
 });
 
-// error handler
-app.use(function (err, req, res, next) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+// MongoDB events
+mongoose.connection.on("connected", () => {
+console.log("MongoDB connected event");
+});
 
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
+mongoose.connection.on("disconnected", () => {
+console.log("MongoDB disconnected");
+});
+
+// 404 handler
+app.use(function (req, res, next) {
+next(createError(404));
+});
+
+// Error handler
+app.use(function (err, req, res, next) {
+res.status(err.status || 500).json({
+message: err.message,
+error: err
+});
 });
 
 module.exports = app;
